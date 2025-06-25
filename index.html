@@ -403,7 +403,7 @@ sigImg.onload = () => {
 
     const pdf = new jsPDF();
     pdf.setFontSize(16);
-    pdf.text("Urlaubsantrag vom: ${datum}", 105, 20, null, null, "center");
+    pdf.text('Urlaubsantrag vom: ${datum}', 105, 20, null, null, "center");
 
     pdf.setFontSize(12);
     pdf.text(`Name: ${name}`, 20, 40);
