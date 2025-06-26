@@ -1,907 +1,487 @@
 <!DOCTYPE html>
-
-<html lang="de"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Urlaubsantrag mit PDF & Archiv</title><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script><style>
-  
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Urlaubsantrag mit PDF & Archiv</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
   body {
-  
     font-family: 'Inter', sans-serif;
-  
     max-width: 480px;
-  
     margin: 0 auto;
-  
     background: #f0f4f8;
-  
     padding: 1rem;
-  
     color: #333;
-  
   }
-  
   h1 {
-  
     text-align: center;
-  
     color: #2c3e50;
-  
   }
-  
   label {
-  
     display: block;
-  
     margin-top: 1rem;
-  
     font-weight: 600;
-  
   }
-  
   input, button, canvas {
-  
     width: 100%;
-  
     box-sizing: border-box;
-  
     padding: 0.5rem;
-  
     margin-top: 0.3rem;
-  
     border-radius: 8px;
-  
     border: 1px solid #ccc;
-  
     font-size: 1rem;
-  
   }
-  
   button {
-  
     margin-top: 1rem;
-  
     background-color: #2980b9;
-  
     color: white;
-  
     font-weight: bold;
-  
     border: none;
-  
     cursor: pointer;
-  
   }
-  
   button:hover {
-  
     background-color: #1c5980;
-  
   }
-  
   #deleteBtn {
-  
     background-color: #e67e22;
-  
   }
-  
   #archive-list {
-  
     list-style: none;
-  
     padding: 0;
-  
     margin-top: 1rem;
-  
     max-height: 200px;
-  
     overflow-y: auto;
-  
   }
-  
   #archive-list li {
-  
     background: white;
-  
     margin-bottom: .5rem;
-  
     padding: .8rem;
-  
     border: 1.5px solid #2980b9;
-  
     border-radius: 12px;
-  
     cursor: pointer;
-  
   }
-  
   canvas {
-  
     height: 100px;
-  
     border: 2px solid #2980b9;
-  
     background-color: white;
-  
     margin-top: 1rem;
-  
     touch-action: none;
-  
   }
-  
-</style></head><body><h1>Urlaubsantrag</h1><label for="nameInput">Name</label>
+</style>
+</head>
+<body>
+<h1>Urlaubsantrag</h1>
 
-<input type="text" id="nameInput" placeholder="Ihr Name" /><label for="gesamtInput">Gesamturlaub (laufendes Jahr)</label>
+<label for="nameInput">Name</label>
+<input type="text" id="nameInput" placeholder="Ihr Name" />
 
-<input type="number" id="gesamtInput" placeholder="z.B. 30" /><label for="restInput">Resturlaub vom Vorjahr</label>
+<label for="gesamtInput">Gesamturlaub (laufendes Jahr)</label>
+<input type="number" id="gesamtInput" placeholder="z.B. 30" />
 
-<input type="number" id="restInput" placeholder="z.B. 5" /><label for="verbleibendInput">Verbleibender Urlaub</label>
+<label for="restInput">Resturlaub vom Vorjahr</label>
+<input type="number" id="restInput" placeholder="z.B. 5" />
 
-<input type="number" id="verbleibendInput" readonly /><label for="urlaubVonInput">Urlaub von</label>
+<label for="verbleibendInput">Verbleibender Urlaub</label>
+<input type="number" id="verbleibendInput" readonly />
 
-<input type="date" id="urlaubVonInput" /><label for="urlaubBisInput">Urlaub bis</label>
+<label for="urlaubVonInput">Urlaub von</label>
+<input type="date" id="urlaubVonInput" />
 
-<input type="date" id="urlaubBisInput" /><div id="resultsDiv" style="display:none; font-weight:bold; margin-top:0.5rem;">Geplante Urlaubstage: <span id="geplanteTageSpan">0</span>
+<label for="urlaubBisInput">Urlaub bis</label>
+<input type="date" id="urlaubBisInput" />
 
-</div><label for="canvas">Unterschrift</label>
+<div id="resultsDiv" style="display:none; font-weight:bold; margin-top:0.5rem;">
+  Geplante Urlaubstage: <span id="geplanteTageSpan">0</span>
+</div>
 
+<label for="canvas">Unterschrift</label>
 <canvas id="canvas" width="300" height="100"></canvas>
-
 <button id="clearSigBtn">Unterschrift löschen</button>
 
 <button id="berechnenBtn">Urlaub berechnen & archivieren</button>
-
 <button id="pdfBtn">PDF speichern</button>
-
 <button id="sendBtn">Per Mail senden</button>
-
 <button id="deleteBtn">Archiv löschen</button>
 
-<h2>Archivierte Anträge</h2><ul id="archive-list"></ul><script>
-  
+<h2>Archivierte Anträge</h2>
+<ul id="archive-list"></ul>
+
+<script>
   const { jsPDF } = window.jspdf;
-  
 
-  
   const nameInput = document.getElementById("nameInput");
-  
   const gesamtInput = document.getElementById("gesamtInput");
-  
   const restInput = document.getElementById("restInput");
-  
   const verbleibendInput = document.getElementById("verbleibendInput");
-  
   const urlaubVonInput = document.getElementById("urlaubVonInput");
-  
   const urlaubBisInput = document.getElementById("urlaubBisInput");
-  
   const berechnenBtn = document.getElementById("berechnenBtn");
-  
   const geplanteTageSpan = document.getElementById("geplanteTageSpan");
-  
   const resultsDiv = document.getElementById("resultsDiv");
-  
   const pdfBtn = document.getElementById("pdfBtn");
-  
   const sendBtn = document.getElementById("sendBtn");
-  
   const deleteBtn = document.getElementById("deleteBtn");
-  
   const archiveList = document.getElementById("archive-list");
-  
   const canvas = document.getElementById("canvas");
-  
   const ctx = canvas.getContext("2d");
-  
   const clearSigBtn = document.getElementById("clearSigBtn");
-  
 
-  
   let drawing = false, lastX = 0, lastY = 0;
-  
 
-  
   // --- Unterschrift Zeichnen ---
-  
   function startPosition(e) {
-  
     e.preventDefault();
-  
     drawing = true;
-  
     const rect = canvas.getBoundingClientRect();
-  
     const x = e.touches ? e.touches[0].clientX : e.clientX;
-  
     const y = e.touches ? e.touches[0].clientY : e.clientY;
-  
     lastX = x - rect.left;
-  
     lastY = y - rect.top;
-  
   }
-  
 
-  
   function finishedPosition(e) {
-  
     e.preventDefault();
-  
     drawing = false;
-  
     ctx.beginPath();
-  
   }
-  
 
-  
   function zeichnen(e) {
-  
     e.preventDefault();
-  
     if (!drawing) return;
-  
     const rect = canvas.getBoundingClientRect();
-  
     const x = e.touches ? e.touches[0].clientX : e.clientX;
-  
     const y = e.touches ? e.touches[0].clientY : e.clientY;
-  
     const currentX = x - rect.left, currentY = y - rect.top;
-  
     ctx.lineWidth = 2;
-  
     ctx.lineCap = "round";
-  
     ctx.strokeStyle = "#000";
-  
     ctx.beginPath();
-  
     ctx.moveTo(lastX, lastY);
-  
     ctx.lineTo(currentX, currentY);
-  
     ctx.stroke();
-  
     lastX = currentX;
-  
     lastY = currentY;
-  
   }
-  
 
-  
   canvas.addEventListener("mousedown", startPosition);
-  
   canvas.addEventListener("touchstart", startPosition);
-  
   canvas.addEventListener("mouseup", finishedPosition);
-  
   canvas.addEventListener("touchend", finishedPosition);
-  
   canvas.addEventListener("mouseout", finishedPosition);
-  
   canvas.addEventListener("touchcancel", finishedPosition);
-  
   canvas.addEventListener("mousemove", zeichnen);
-  
   canvas.addEventListener("touchmove", zeichnen);
-  
 
-  
   clearSigBtn.addEventListener("click", () => {
-  
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
   });
-  
 
-  
   // --- Helferfunktionen ---
-  
 
-  
   function istCanvasLeer(canvas) {
-  
     const blank = document.createElement("canvas");
-  
     blank.width = canvas.width;
-  
     blank.height = canvas.height;
-  
     return canvas.toDataURL() === blank.toDataURL();
-  
   }
-  
 
-  
   function berechneOstern(jahr) {
-  
     const G = jahr % 19;
-  
     const C = Math.floor(jahr / 100);
-  
     const H = (C - Math.floor(C / 4) - Math.floor((8 * C + 13) / 25) + 19 * G + 15) % 30;
-  
     const I = H - Math.floor(H / 28) * (1 - Math.floor(29 / (H + 1)) * Math.floor((21 - G) / 11));
-  
     const J = (jahr + Math.floor(jahr / 4) + I + 2 - C + Math.floor(C / 4)) % 7;
-  
     const L = I - J;
-  
     const monat = 3 + Math.floor((L + 40) / 44);
-  
     const tag = L + 28 - 31 * Math.floor(monat / 4);
-  
     return new Date(jahr, monat - 1, tag);
-  
   }
-  
 
-  
   function feiertageSachsenAnhalt(jahr) {
-  
     const ostern = berechneOstern(jahr);
-  
     return [
-  
       new Date(jahr, 0, 1),
-  
       new Date(jahr, 4, 1),
-  
       new Date(jahr, 4, 9),
-  
       new Date(jahr, 9, 3),
-  
       new Date(jahr, 9, 31),
-  
       new Date(jahr, 11, 25),
-  
       new Date(jahr, 11, 26),
-  
       new Date(ostern.getFullYear(), ostern.getMonth(), ostern.getDate() + 1),
-  
       new Date(ostern.getFullYear(), ostern.getMonth(), ostern.getDate() + 39),
-  
       new Date(ostern.getFullYear(), ostern.getMonth(), ostern.getDate() + 50)
-  
     ];
-  
   }
-  
 
-  
   function istFeiertag(date, feiertage) {
-  
     return feiertage.some(fd =>
-  
       fd.getFullYear() === date.getFullYear() &&
-  
       fd.getMonth() === date.getMonth() &&
-  
       fd.getDate() === date.getDate()
-  
     );
-  
   }
-  
 
-  
   function berechneUrlaubstage(vonStr, bisStr) {
-  
     if (!vonStr || !bisStr) return 0;
-  
     const von = new Date(vonStr);
-  
     const bis = new Date(bisStr);
-  
     if (bis < von) return 0;
-  
     const feiertage = feiertageSachsenAnhalt(von.getFullYear());
-  
     let count = 0;
-  
     for (let d = new Date(von); d <= bis; d.setDate(d.getDate() + 1)) {
-  
       const day = d.getDay();
-  
       if (day !== 0 && day !== 6 && !istFeiertag(d, feiertage)) count++;
-  
     }
-  
     return count;
-  
   }
-  
 
-  
   function formatDatum(dateStr) {
-  
     if (!dateStr) return "";
-  
     const d = new Date(dateStr);
-  
     const day = String(d.getDate()).padStart(2, '0');
-  
     const month = String(d.getMonth() + 1).padStart(2, '0');
-  
     const year = d.getFullYear();
-  
-    return ${day}.${month}.${year};
-  
+    return `${day}.${month}.${year}`;
   }
-  
 
-  
   function updateVerbleibend(geplanteTage) {
-  
     const gesamt = parseInt(gesamtInput.value) || 0;
-  
     const rest = parseInt(restInput.value) || 0;
-  
     const verbleibend = gesamt + rest - geplanteTage;
-  
     verbleibendInput.value = verbleibend >= 0 ? verbleibend : 0;
-  
   }
-  
 
-  
   // --- Dauerhaftes Speichern von Name, Gesamturlaub und Resturlaub ---
-  
   function saveBasics() {
-  
     localStorage.setItem("urlaub_name", nameInput.value.trim());
-  
     localStorage.setItem("urlaub_gesamt", gesamtInput.value);
-  
     localStorage.setItem("urlaub_rest", restInput.value);
-  
   }
-  
   function loadBasics() {
-  
     const n = localStorage.getItem("urlaub_name");
-  
     const g = localStorage.getItem("urlaub_gesamt");
-  
     const r = localStorage.getItem("urlaub_rest");
-  
     if (n) nameInput.value = n;
-  
     if (g) gesamtInput.value = g;
-  
     if (r) restInput.value = r;
-  
   }
-  
 
-  
   // Eingaben speichern bei Änderung
-  
   nameInput.addEventListener("input", saveBasics);
-  
   gesamtInput.addEventListener("input", saveBasics);
-  
   restInput.addEventListener("input", saveBasics);
-  
 
-  
   // --- Archiv laden ---
-  
   function ladeArchiv() {
-  
     archiveList.innerHTML = "";
-  
     let archiv = JSON.parse(localStorage.getItem("urlaubArchiv") || "[]");
-  
     archiv.forEach((eintrag, index) => {
-  
       const li = document.createElement("li");
-  
-      li.textContent = ${eintrag.name} - Urlaub von ${formatDatum(eintrag.von)} bis ${formatDatum(eintrag.bis)} (${eintrag.geplanteTage} Tage);
-  
+      li.textContent = `${eintrag.name} - Urlaub von ${formatDatum(eintrag.von)} bis ${formatDatum(eintrag.bis)} (${eintrag.geplanteTage} Tage)`;
       li.title = "Klick zum Anzeigen als PDF, Rechtsklick zum Löschen";
-  
       li.style.userSelect = "none";
-  
 
-  
       li.addEventListener("click", () => {
-  
         // PDF anzeigen
-  
         zeigePDFausArchiv(eintrag);
-  
       });
-  
       li.addEventListener("contextmenu", (ev) => {
-  
         ev.preventDefault();
-  
         if (confirm("Archivierte Anfrage löschen?")) {
-  
           archiv.splice(index, 1);
-  
           localStorage.setItem("urlaubArchiv", JSON.stringify(archiv));
-  
           ladeArchiv();
-  
         }
-  
       });
-  
       archiveList.appendChild(li);
-  
     });
-  
   }
-  
 
-  
   function zeigePDFausArchiv(eintrag) {
-  
     const pdf = new jsPDF();
-  
     pdf.setFontSize(16);
-  
     pdf.text("Urlaubsantrag (Archiv)", 105, 20, null, null, "center");
-  
 
-  
     pdf.setFontSize(12);
-  
-    pdf.text(Name: ${eintrag.name}, 20, 40);
-  
-    pdf.text(Gesamturlaub: ${eintrag.gesamt}, 20, 50);
-  
-    pdf.text(Resturlaub: ${eintrag.rest}, 20, 60);
-  
-    pdf.text(Verbleibender Urlaub: ${eintrag.verbleibend}, 20, 70);
-  
-    pdf.text(Urlaub von: ${formatDatum(eintrag.von)}, 20, 80);
-  
-    pdf.text(Urlaub bis: ${formatDatum(eintrag.bis)}, 20, 90);
-  
-    pdf.text(Geplante Urlaubstage: ${eintrag.geplanteTage}, 20, 100);
-  
-    pdf.text(Datum: ${eintrag.datum}, 20, 110);
-  
+    pdf.text(`Name: ${eintrag.name}`, 20, 40);
+    pdf.text(`Gesamturlaub: ${eintrag.gesamt}`, 20, 50);
+    pdf.text(`Resturlaub: ${eintrag.rest}`, 20, 60);
+    pdf.text(`Verbleibender Urlaub: ${eintrag.verbleibend}`, 20, 70);
+    pdf.text(`Urlaub von: ${formatDatum(eintrag.von)}`, 20, 80);
+    pdf.text(`Urlaub bis: ${formatDatum(eintrag.bis)}`, 20, 90);
+    pdf.text(`Geplante Urlaubstage: ${eintrag.geplanteTage}`, 20, 100);
+    pdf.text(`Datum: ${eintrag.datum}`, 20, 110);
 
-  
     // Unterschrift einfügen
-  
     const sigImg = new Image
-  
 sigImg.onload = () => {
-  
       pdf.addImage(sigImg, 'PNG', 150, 120, 40, 20);
-  
       pdf.output('dataurlnewwindow'); // PDF in neuem Tab anzeigen
-  
     };
-  
     sigImg.src = eintrag.unterschrift;
-  
   }
-  
 
-  
   // --- Urlaub berechnen & archivieren ---
-  
   berechnenBtn.addEventListener("click", () => {
-  
     const name = nameInput.value.trim();
-  
     const gesamt = parseInt(gesamtInput.value) || 0;
-  
     const rest = parseInt(restInput.value) || 0;
-  
     const von = urlaubVonInput.value;
-  
     const bis = urlaubBisInput.value;
-  
 
-  
     if (!name) {
-  
       alert("Bitte Name eingeben.");
-  
       return;
-  
     }
-  
     if (!von || !bis) {
-  
       alert("Bitte Urlaub von und bis Datum eingeben.");
-  
       return;
-  
     }
-  
     if (new Date(bis) < new Date(von)) {
-  
       alert("Das Enddatum darf nicht vor dem Startdatum liegen.");
-  
       return;
-  
     }
-  
     if (istCanvasLeer(canvas)) {
-  
       alert("Bitte unterschreiben Sie den Antrag.");
-  
       return;
-  
     }
-  
 
-  
     const geplanteTage = berechneUrlaubstage(von, bis);
-  
     updateVerbleibend(geplanteTage);
-  
 
-  
     geplanteTageSpan.textContent = geplanteTage;
-  
     resultsDiv.style.display = "block";
-  
 
-  
     const verbleibend = parseInt(verbleibendInput.value);
-  
 
-  
     // Unterschrift als Bild speichern
-  
     const unterschriftImg = canvas.toDataURL();
-  
 
-  
     // Archiv-Eintrag
-  
     const datum = new Date().toLocaleDateString('de-DE');
-  
     const eintrag = {
-  
       name,
-  
       gesamt,
-  
       rest,
-  
       verbleibend,
-  
       von,
-  
       bis,
-  
       geplanteTage,
-  
       datum,
-  
       unterschrift: unterschriftImg
-  
     };
-  
 
-  
     // Archiv speichern
-  
     let archiv = JSON.parse(localStorage.getItem("urlaubArchiv") || "[]");
-  
     archiv.push(eintrag);
-  
     localStorage.setItem("urlaubArchiv", JSON.stringify(archiv));
-  
     ladeArchiv();
-  
 
-  
     alert("Urlaub berechnet und Antrag archiviert.");
-  
   });
-  
 
-  
   // --- PDF speichern ---
-  
   pdfBtn.addEventListener("click", () => {
-  
     const name = nameInput.value.trim();
-  
     const gesamt = parseInt(gesamtInput.value) || 0;
-  
     const rest = parseInt(restInput.value) || 0;
-  
     const verbleibend = parseInt(verbleibendInput.value) || 0;
-  
     const von = urlaubVonInput.value;
-  
     const bis = urlaubBisInput.value;
-  
     const geplanteTage = parseInt(geplanteTageSpan.textContent) || 0;
-  
     const datum = new Date().toLocaleDateString('de-DE');
-  
 
-  
     if (!name || !von || !bis) {
-  
       alert("Bitte alle erforderlichen Felder ausfüllen.");
-  
       return;
-  
     }
-  
     if (istCanvasLeer(canvas)) {
-  
       alert("Bitte unterschreiben Sie den Antrag.");
-  
       return;
-  
     }
-  
 
-  
     const pdf = new jsPDF();
-  
     pdf.setFontSize(16);
-  
     pdf.text('Urlaubsantrag vom: ${datum}', 105, 20, null, null, "center");
-  
 
-  
     pdf.setFontSize(12);
-  
-    pdf.text(Name: ${name}, 20, 40);
-  
-    pdf.text(Gesamturlaub: ${gesamt}, 20, 50);
-  
-    pdf.text(Resturlaub: ${rest}, 20, 60);
-  
-    pdf.text(Verbleibender Urlaub: ${verbleibend}, 20, 70);
-  
-    pdf.text(Urlaub von: ${formatDatum(von)}, 20, 80);
-  
-    pdf.text(Urlaub bis: ${formatDatum(bis)}, 20, 90);
-  
-    pdf.text(Geplante Urlaubstage: ${geplanteTage}, 20, 100);
-  
-    pdf.text(Datum: ${datum}, 20, 110);
-  
+    pdf.text(`Name: ${name}`, 20, 40);
+    pdf.text(`Gesamturlaub: ${gesamt}`, 20, 50);
+    pdf.text(`Resturlaub: ${rest}`, 20, 60);
+    pdf.text(`Verbleibender Urlaub: ${verbleibend}`, 20, 70);
+    pdf.text(`Urlaub von: ${formatDatum(von)}`, 20, 80);
+    pdf.text(`Urlaub bis: ${formatDatum(bis)}`, 20, 90);
+    pdf.text(`Geplante Urlaubstage: ${geplanteTage}`, 20, 100);
+    pdf.text(`Datum: ${datum}`, 20, 110);
 
-  
     // Unterschrift
-  
     const imgData = canvas.toDataURL();
-  
     pdf.addImage(imgData, "PNG", 150, 120, 40, 20);
-  
 
-  
-    pdf.save(Urlaubsantrag_${name}_${datum.replace(/\./g, "-")}.pdf);
-  
+    pdf.save(`Urlaubsantrag_${name}_${datum.replace(/\./g, "-")}.pdf`);
   });
-  
 
-  
   // --- Mail senden ---
-  
   sendBtn.addEventListener("click", () => {
-  
     const name = nameInput.value.trim();
-  
     const gesamt = parseInt(gesamtInput.value) || 0;
-  
     const rest = parseInt(restInput.value) || 0;
-  
     const verbleibend = parseInt(verbleibendInput.value) || 0;
-  
     const von = urlaubVonInput.value;
-  
     const bis = urlaubBisInput.value;
-  
     const geplanteTage = parseInt(geplanteTageSpan.textContent) || 0;
-  
     const datum = new Date().toLocaleDateString('de-DE');
-  
 
-  
     if (!name || !von || !bis) {
-  
       alert("Bitte alle erforderlichen Felder ausfüllen.");
-  
       return;
-  
     }
-  
     if (istCanvasLeer(canvas)) {
-  
       alert("Bitte unterschreiben Sie den Antrag.");
-  
       return;
-  
     }
-  
 
-  
     const empfaenger = "info@taxi-pfeiffer-blankenburg.de"; // Hier E-Mail einsetzen
-  
-    const betreff = encodeURIComponent(Urlaubsantrag von ${name});
-  
+    const betreff = encodeURIComponent(`Urlaubsantrag von ${name}`);
 
-  
     const body = encodeURIComponent(
-  
-Sehr geehrte Damen und Herren,<br><br>
-  
+`Sehr geehrte Damen und Herren,<br><br>
 
-  
 hiermit reiche ich ${name} meinen Urlaubsantrag wie folgt ein:<br>
-  
 
-  
 Name: ${name}<br>
-  
 Gesamturlaub: ${gesamt}<br>
-  
 Resturlaub: ${rest}<br>
-  
 Verbleibender Urlaub: ${verbleibend}<br>
-  
 Urlaub von: ${formatDatum(von)}<br>
-  
 Urlaub bis: ${formatDatum(bis)}<br>
-  
 Geplante Urlaubstage: ${geplanteTage}<br><br>
-  
 
-  
 Mit freundlichen Grüßen<br>
-  
 
-  
-${name}, ${datum}
-  
+${name}, ${datum}`
     );
-  
 
-  
-    window.location.href = mailto:${empfaenger}?subject=${betreff}&body=${body};
-  
+    window.location.href = `mailto:${empfaenger}?subject=${betreff}&body=${body}`;
   });
-  
 
-  
   // --- Archiv löschen ---
-  
   deleteBtn.addEventListener("click", () => {
-  
     if (confirm("Möchten Sie das gesamte Archiv löschen?")) {
-  
       localStorage.removeItem("urlaubArchiv");
-  
       ladeArchiv();
-  
       alert("Archiv wurde gelöscht.");
-  
     }
-  
   });
-  
 
-  
   // Beim Laden Basics und Archiv laden
-  
   window.addEventListener("load", () => {
-  
     loadBasics();
-  
     ladeArchiv();
-  
     resultsDiv.style.display = "none";
-  
     updateVerbleibend(0);
-  
   });
-  
-</script></body></html>
+</script>
+</body>
+</html>
