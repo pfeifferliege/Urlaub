@@ -432,21 +432,25 @@ nameInput.addEventListener("input", saveBasics);
         return;
       }
 
-      const empfaenger = "info@taxi-pfeiffer-blankenburg.de";
+      const empfaenger = "info@taxi-pfeiffer-blankenburg.de,lue-heim@web.de";
       const betreff = encodeURIComponent(`Urlaubsantrag von ${name}`);
       const body = encodeURIComponent(
-`Sehr geehrte Damen und Herren,<br><br>
-hiermit reiche ich ${name} meinen Urlaubsantrag wie folgt ein:<br>
-Name: ${name}<br>
-Gesamturlaub: ${gesamt}<br>
-Resturlaub: ${rest}<br>
-Verbleibender Urlaub: ${verbleibend}<br>
-Urlaub von: ${formatDatum(von)}<br>
-Urlaub bis: ${formatDatum(bis)}<br>
-Geplante Urlaubstage: ${geplanteTage}<br><br>
-Mit freundlichen Grüßen<br>
-${name}, ${datum}`
-      );
+`Sehr geehrte Damen und Herren,
+
+hiermit reiche ich, ${name}, meinen Urlaubsantrag wie folgt ein:
+
+Name:               ${name}
+Gesamturlaub:       ${gesamt}
+Resturlaub:         ${rest}
+Verbleibender Urlaub: ${verbleibend}
+Urlaub von:         ${formatDatum(von)}
+Urlaub bis:         ${formatDatum(bis)}
+Geplante Urlaubstage: ${geplanteTage}
+
+Mit freundlichen Grüßen
+${name}
+${datum}`
+);
 
       window.location.href = `mailto:${empfaenger}?subject=${betreff}&body=${body}`;
     });
