@@ -414,46 +414,42 @@ nameInput.addEventListener("input", saveBasics);
     });
 
     sendBtn.addEventListener("click", () => {
-      const name = nameInput.value.trim();
-      const gesamt = parseInt(gesamtInput.value) || 0;
-      const rest = parseInt(restInput.value) || 0;
-      const verbleibend = parseInt(verbleibendInput.value) || 0;
-      const von = urlaubVonInput.value;
-      const bis = urlaubBisInput.value;
-      const geplanteTage = parseInt(geplanteTageSpan.textContent) || 0;
-      const datum = new Date().toLocaleDateString('de-DE');
+  const name = nameInput.value.trim();
+  const gesamt = parseInt(gesamtInput.value) || 0;
+  const rest = parseInt(restInput.value) || 0;
+  const verbleibend = parseInt(verbleibendInput.value) || 0;
+  const von = urlaubVonInput.value;
+  const bis = urlaubBisInput.value;
+  const geplanteTage = parseInt(geplanteTageSpan.textContent) || 0;
+  const datum = new Date().toLocaleDateString('de-DE');
 
-      if (!name || !von || !bis) {
-        alert("Bitte alle erforderlichen Felder ausfüllen.");
-        return;
-      }
-      if (istCanvasLeer(canvas)) {
-        alert("Bitte unterschreiben Sie den Antrag.");
-        return;
-      }
+  if (!name || !von || !bis) {
+    alert("Bitte alle erforderlichen Felder ausfüllen.");
+    return;
+  }
+  if (istCanvasLeer(canvas)) {
+    alert("Bitte unterschreiben Sie den Antrag.");
+    return;
+  }
 
-      const empfaenger = "info@taxi-pfeiffer-blankenburg.de,lue-heim@web.de";
-      const betreff = encodeURIComponent(`Urlaubsantrag von ${name}`);
-      const body = encodeURIComponent(
-`Sehr geehrte Damen und Herren,
+  const empfaenger = "info@taxi-pfeiffer-blankenburg.de,lue-heim@web.de";
+  const betreff = encodeURIComponent(`Urlaubsantrag von ${name}`);
+  const body = encodeURIComponent(
+`Sehr geehrte Damen und Herren,<br><br>
+hiermit reiche ich ${name} meinen Urlaubsantrag wie folgt ein:<br>
+Name: ${name}<br>
+Gesamturlaub: ${gesamt}<br>
+Resturlaub: ${rest}<br>
+Verbleibender Urlaub: ${verbleibend}<br>
+Urlaub von: ${formatDatum(von)}<br>
+Urlaub bis: ${formatDatum(bis)}<br>
+Geplante Urlaubstage: ${geplanteTage}<br><br>
+Mit freundlichen Grüßen<br>
+${name}, ${datum}`
+  );
 
-hiermit reiche ich, ${name}, meinen Urlaubsantrag wie folgt ein:
-
-Name:               ${name}
-Gesamturlaub:       ${gesamt}
-Resturlaub:         ${rest}
-Verbleibender Urlaub: ${verbleibend}
-Urlaub von:         ${formatDatum(von)}
-Urlaub bis:         ${formatDatum(bis)}
-Geplante Urlaubstage: ${geplanteTage}
-
-Mit freundlichen Grüßen
-${name}
-${datum}`
-);
-
-      window.location.href = `mailto:${empfaenger}?subject=${betreff}&body=${body}`;
-    });
+  window.location.href = `mailto:${empfaenger}?subject=${betreff}&body=${body}`;
+});
 
     deleteBtn.addEventListener("click", () => {
       if (confirm("Möchten Sie das gesamte Archiv löschen?")) {
