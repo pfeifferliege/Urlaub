@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
@@ -195,21 +195,19 @@
     });
 
     grunddatenResetBtn.addEventListener("click", () => {
-      if (confirm("Möchten Sie die Grunddaten wirklich löschen?")) {
-        localStorage.removeItem("urlaub_name");
-        localStorage.removeItem("urlaub_gesamt");
-        localStorage.removeItem("urlaub_rest");
-        localStorage.removeItem("urlaub_verbleibend");
-        nameInput.value = "";
-        gesamtInput.value = "";
-        restInput.value = "";
-        verbleibendInput.value = "";
-        gesamtInput.disabled = false;
-        restInput.disabled = false;
-        resultsDiv.style.display = "none";
-        heuteBeantragtDiv.style.display = "none";
-        alert("Grunddaten wurden gelöscht. Bitte neu eingeben.");
-      }
+      localStorage.removeItem("urlaub_name");
+      localStorage.removeItem("urlaub_gesamt");
+      localStorage.removeItem("urlaub_rest");
+      localStorage.removeItem("urlaub_verbleibend");
+      nameInput.value = "";
+      gesamtInput.value = "";
+      restInput.value = "";
+      verbleibendInput.value = "";
+      gesamtInput.disabled = false;
+      restInput.disabled = false;
+      resultsDiv.style.display = "none";
+      heuteBeantragtDiv.style.display = "none";
+      alert("Grunddaten wurden gelöscht. Bitte neu eingeben.");
     });
 
     function istCanvasLeer(canvas) {
@@ -236,40 +234,29 @@
       const tag = date.getDate();
       const monat = date.getMonth() + 1;
       const wochenTag = date.getDay();
-
       if (wochenTag === 0 || wochenTag === 6) return true;
-
       const ostern = berechneOstern(jahr);
       const feiertage = [
-        new Date(jahr, 0, 1),
-        new Date(jahr, 4, 1),
-        new Date(jahr, 9, 3),
-        new Date(jahr, 9, 31),
-        new Date(jahr, 11, 25),
-        new Date(jahr, 11, 26),
+        new Date(jahr, 0, 1), // Neujahr
+        new Date(jahr, 4, 1), // Tag der Arbeit
+        new Date(jahr, 9, 3), // Tag der Deutschen Einheit
+        new Date(jahr, 9, 31), // Reformationstag
+        new Date(jahr, 11, 25), // Weihnachten
+        new Date(jahr, 11, 26), // 2. Weihnachtstag
         new Date(ostern.getFullYear(), ostern.getMonth(), ostern.getDate()), // Ostersonntag
         new Date(ostern.getFullYear(), ostern.getMonth(), ostern.getDate() + 1), // Ostermontag
         new Date(ostern.getFullYear(), ostern.getMonth(), ostern.getDate() - 2), // Karfreitag
         new Date(ostern.getFullYear(), ostern.getMonth(), ostern.getDate() + 39), // Christi Himmelfahrt
         new Date(ostern.getFullYear(), ostern.getMonth(), ostern.getDate() + 50), // Pfingstmontag
       ];
-
       return feiertage.some(f => f.getDate() === tag && (f.getMonth() + 1) === monat);
-    }
-
-    function tageZwischen(start, end) {
-      const oneDay = 24 * 60 * 60 * 1000;
-      return Math.round((end - start) / oneDay) + 1;
     }
 
     function berechneUrlaubstage(von, bis) {
       let tage = 0;
       let aktuell = new Date(von.getTime());
-
       while (aktuell <= bis) {
-        if (!istFeiertag(aktuell)) {
-          tage++;
-        }
+        if (!istFeiertag(aktuell)) tage++;
         aktuell.setDate(aktuell.getDate() + 1);
       }
       return tage;
@@ -280,12 +267,10 @@
       const gespeicherterGesamt = localStorage.getItem("urlaub_gesamt") || "";
       const gespeicherterRest = localStorage.getItem("urlaub_rest") || "";
       const gespeicherterVerbleibend = localStorage.getItem("urlaub_verbleibend") || "";
-
       nameInput.value = gespeicherterName;
       gesamtInput.value = gespeicherterGesamt;
       restInput.value = gespeicherterRest;
       verbleibendInput.value = gespeicherterVerbleibend;
-
       if (gespeicherterGesamt !== "" || gespeicherterRest !== "") {
         gesamtInput.disabled = true;
         restInput.disabled = true;
@@ -304,16 +289,23 @@
     function ladeArchiv() {
       archiveList.innerHTML = "";
       let archiv = JSON.parse(localStorage.getItem("urlaub_archiv") || "[]");
-      archiv.forEach((eintrag, index) => {
+      archiv.forEach((eintrag) => {
         let obj = JSON.parse(eintrag);
         let li = document.createElement("li");
         li.textContent = `${obj.name} - von ${obj.von} bis ${obj.bis} (${obj.geplanteTage} Tage)`;
         li.addEventListener("click", () => {
-          if (confirm(`Archiv-Eintrag löschen? ${obj.name} von ${obj.von} bis ${obj.bis}`)) {
-            archiv.splice(index, 1);
-            localStorage.setItem("urlaub_archiv", JSON.stringify(archiv));
-            ladeArchiv();
-          }
+          const pdf = new jsPDF();
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(16);
+          pdf.text("Urlaubsantrag (Archiv)", 105, 20, null, null, "center");
+          pdf.setFontSize(12);
+          pdf.setFont("helvetica", "normal");
+          pdf.text(`Name: ${obj.name}`, 20, 40);
+          pdf.text(`Urlaub von: ${obj.von}`, 20, 50);
+          pdf.text(`Urlaub bis: ${obj.bis}`, 20, 60);
+          pdf.text(`Geplante Urlaubstage: ${obj.geplanteTage}`, 20, 70);
+          if (obj.sigImg) pdf.addImage(obj.sigImg, "PNG", 20, 80, 80, 30);
+          pdf.save(`Urlaubsantrag_${obj.name}_${obj.datum}.pdf`);
         });
         archiveList.appendChild(li);
       });
@@ -321,81 +313,46 @@
 
     berechnenBtn.addEventListener("click", () => {
       const name = nameInput.value.trim();
-      if (!name) {
-        alert("Bitte Name eingeben.");
-        return;
-      }
-
+      if (!name) return alert("Bitte Name eingeben.");
       const gesamt = Number(gesamtInput.value);
       const rest = Number(restInput.value);
       const von = urlaubVonInput.value;
       const bis = urlaubBisInput.value;
-
-      if (!gesamt || !rest) {
-        alert("Bitte Gesamturlaub und Resturlaub eingeben.");
-        return;
-      }
-
-      if (!von || !bis) {
-        alert("Bitte gültige Urlaubsdaten (von, bis) eingeben.");
-        return;
-      }
-
+      if (!gesamt || !rest) return alert("Bitte Gesamturlaub und Resturlaub eingeben.");
+      if (!von || !bis) return alert("Bitte gültige Urlaubsdaten (von, bis) eingeben.");
       const vonDate = new Date(von);
       const bisDate = new Date(bis);
-
-      if (bisDate < vonDate) {
-        alert("Das Enddatum darf nicht vor dem Startdatum liegen.");
-        return;
-      }
-
-      // Berechnung der geplanten Urlaubstage
+      if (bisDate < vonDate) return alert("Das Enddatum darf nicht vor dem Startdatum liegen.");
       const geplanteTage = berechneUrlaubstage(vonDate, bisDate);
 
-      // Bereits genommener Urlaub aus Archiv berechnen (Summe)
       let archiv = JSON.parse(localStorage.getItem("urlaub_archiv") || "[]");
       let bereitsGenommen = 0;
-      archiv.forEach(e => {
-        let obj = JSON.parse(e);
-        if (obj.name === name) {
-          bereitsGenommen += Number(obj.geplanteTage) || 0;
-        }
-      });
+      archiv.forEach(e => { let obj = JSON.parse(e); if (obj.name === name) bereitsGenommen += Number(obj.geplanteTage) || 0; });
 
-      // Neuer verbleibender Urlaub berechnen
       const verbleibend = gesamt + rest - bereitsGenommen - geplanteTage;
       verbleibendInput.value = verbleibend >= 0 ? verbleibend : 0;
-
       geplanteTageSpan.textContent = geplanteTage;
       resultsDiv.style.display = "block";
-
-      // Heute beantragten Urlaub anzeigen (nur temporär, nicht speichern!)
       heuteBeantragtSpan.textContent = geplanteTage;
       heuteBeantragtDiv.style.display = "block";
 
-      // Speichere Grunddaten (Name, gesamt, rest, verbleibend) dauerhaft
       speichernGrunddaten();
 
-      // Archiv erweitern
+      const sigImg = canvas.toDataURL("image/png");
       const neuerEintrag = {
         name,
         von,
         bis,
         geplanteTage,
         bereitsGenommen,
-        datum: new Date().toISOString().slice(0, 10)
+        datum: new Date().toISOString().slice(0, 10),
+        sigImg
       };
-
       archiv.unshift(JSON.stringify(neuerEintrag));
       localStorage.setItem("urlaub_archiv", JSON.stringify(archiv));
-
       ladeArchiv();
 
-      // PDF erstellen mit Unterschrift
-      if (istCanvasLeer(canvas)) {
-        alert("Bitte unterschreiben, bevor Sie PDF erstellen.");
-        return;
-      }
+      if (istCanvasLeer(canvas)) return alert("Bitte unterschreiben, bevor Sie PDF erstellen.");
 
       const pdf = new jsPDF();
       pdf.setFont("helvetica", "bold");
@@ -407,76 +364,26 @@
       pdf.text(`Gesamturlaub: ${gesamt}`, 20, 50);
       pdf.text(`Resturlaub vom Vorjahr: ${rest}`, 20, 60);
       pdf.text(`Bereits genommener Urlaub: ${bereitsGenommen}`, 20, 70);
-      pdf.text(`Urlaub von: ${von}`, 20, 90);
-      pdf.text(`Urlaub bis: ${bis}`, 20, 100);
-      pdf.text(`Geplante Urlaubstage: ${geplanteTage}`, 20, 110);
-      pdf.text(`Verbleibender Urlaub: ${verbleibend}`, 20, 80);
-      // Unterschrift als Bild
-      const sigImg = canvas.toDataURL("image/png");
+      pdf.text(`Urlaub von: ${von}`, 20, 80);
+      pdf.text(`Urlaub bis: ${bis}`, 20, 90);
+      pdf.text(`Geplante Urlaubstage: ${geplanteTage}`, 20, 100);
+      pdf.text(`Verbleibender Urlaub: ${verbleibend}`, 20, 110);
       pdf.addImage(sigImg, "PNG", 20, 120, 80, 30);
       pdf.save(`Urlaubsantrag_${name}_${new Date().toISOString().slice(0,10)}.pdf`);
     });
 
-    sendBtn.addEventListener("click", () => {
-      const name = nameInput.value.trim();
-      const gesamt = gesamtInput.value;
-      const rest = restInput.value;
-      const verbleibend = verbleibendInput.value;
-
-      let archiv = JSON.parse(localStorage.getItem("urlaub_archiv") || "[]");
-      let letzter = archiv.length > 0 ? JSON.parse(archiv[0]) : null;
-
-      if (!name || !letzter || !letzter.von || !letzter.bis) {
-        alert("Bitte zuerst Urlaub berechnen.");
-        return;
-      }
-
-      const von = letzter.von;
-      const bis = letzter.bis;
-      const geplanteTage = letzter.geplanteTage || 0;
-      const genommenerUrlaub = letzter.bereitsGenommen || 0;
-      const datum = new Date().toLocaleDateString();
-
-      const empfaenger = "info@taxi-pfeiffer-blankenburg.de,lue-heim@web.de";
-      const betreff = `Urlaubsantrag von ${name}`;
-      const bodyLines = [
-        `Sehr geehrte Damen und Herren,`,
-        ``,
-        `hiermit reiche ich ${name} meinen Urlaubsantrag wie folgt ein:`,
-        `Name: ${name}`,
-        `Gesamturlaub: ${gesamt}`,
-        `Resturlaub: ${rest}`,
-        `Bereits genommener Urlaub: ${genommenerUrlaub}`,
-                `Urlaub von: ${von}`,
-        `Urlaub bis: ${bis}`,
-        `Geplante Urlaubstage: ${geplanteTage}`,
-`Verbleibender Urlaub: ${verbleibend}`,
-        ``,
-        `Mit freundlichen Grüßen`,
-        `${name}, ${datum}`
-      ];
-      const body = encodeURIComponent(bodyLines.join("\r\n"));
-
-      window.location.href = `mailto:${empfaenger}?subject=${encodeURIComponent(betreff)}&body=${body}`;
-    });
-
     deleteBtn.addEventListener("click", () => {
-      if (confirm("Möchten Sie das gesamte Archiv wirklich löschen?")) {
-        localStorage.removeItem("urlaub_archiv");
-        ladeArchiv();
-        resultsDiv.style.display = "none";
-        heuteBeantragtDiv.style.display = "none";
-        verbleibendInput.value = "";
-        geplanteTageSpan.textContent = "0";
-        alert("Archiv gelöscht.");
-      }
+      localStorage.removeItem("urlaub_archiv");
+      ladeArchiv();
+      resultsDiv.style.display = "none";
+      heuteBeantragtDiv.style.display = "none";
+      verbleibendInput.value = "";
+      geplanteTageSpan.textContent = "0";
+      alert("Archiv gelöscht.");
     });
 
-    // Beim Laden Grunddaten und Archiv laden
     ladeGrunddaten();
     ladeArchiv();
-
   </script>
 </body>
 </html>
-
